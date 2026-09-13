@@ -1,28 +1,25 @@
-# Draft API with CORS
+# terraform-aws-draft-cors-api
 
 Draft a public API with OPTIONS endpoint for CORS.
 
 Please see sister module responsible for deploying the API:
-https://github.com/SHerlihy/terraform-aws-deploy-api-public-quota
+https://registry.terraform.io/modules/SHerlihy/deploy-api-public-quota/aws/latest
 
-## Example Usage
+## Prerequisites
+- An active AWS Account configured with appropriate IAM permissions.
+- Terraform `~> 1.5`
+
+## Example
 
 For comprehensive usage cases see:
 https://github.com/SHerlihy/test_module_quota_api
 
-### Multiple Deployments
-
-```
-module "draft_apis" {
-  providers = {
-    aws = aws.product_role
-  }
-
-  for_each = local.api_names
+```hcl
+module "draft_api" {
   source  = "SHerlihy/draft-cors-api/aws"
   version = "0.0.1"
 
-  api_name = each.value
-  tags     = local.tags
+  api_name = var.api_name
+  tags     = var.tags
 }
 ```

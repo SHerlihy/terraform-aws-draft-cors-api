@@ -1,4 +1,4 @@
-resource "aws_api_gateway_rest_api" "default" {
+resource "aws_api_gateway_rest_api" "root" {
   name = var.api_name
 
   endpoint_configuration {
@@ -8,24 +8,32 @@ resource "aws_api_gateway_rest_api" "default" {
   tags = var.tags
 }
 
-resource "aws_api_gateway_resource" "default" {
-  rest_api_id = aws_api_gateway_rest_api.default.id
-  parent_id   = aws_api_gateway_rest_api.default.root_resource_id
+resource "aws_api_gateway_resource" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.root.id
+  parent_id   = aws_api_gateway_rest_api.root.root_resource_id
   path_part   = "{proxy+}"
 }
 
-resource "aws_api_gateway_method" "default" {
-  rest_api_id   = aws_api_gateway_rest_api.default.id
-  resource_id   = aws_api_gateway_resource.default.id
+# Handles all normal HTTP methods through the backend.
+resource "aws_api_gateway_method" "proxy_any" {
+  rest_api_id   = aws_api_gateway_rest_api.root.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "cors" {
+  rest_api_id   = aws_api_gateway_rest_api.root.id
+  resource_id   = aws_api_gateway_resource.proxy.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "default" {
-  rest_api_id = aws_api_gateway_rest_api.default.id
-  resource_id = aws_api_gateway_resource.default.id
+resource "aws_api_gateway_integration" "cors" {
+  rest_api_id = aws_api_gateway_rest_api.root.id
+  resource_id = aws_api_gateway_resource.proxy.id
 
-  http_method = aws_api_gateway_method.default.http_method
+  http_method = aws_api_gateway_method.cors.http_method
   type        = "MOCK"
 
   request_templates = {
@@ -33,10 +41,10 @@ resource "aws_api_gateway_integration" "default" {
   }
 }
 
-resource "aws_api_gateway_method_response" "default" {
-  rest_api_id = aws_api_gateway_rest_api.default.id
-  resource_id = aws_api_gateway_resource.default.id
-  http_method = aws_api_gateway_method.default.http_method
+resource "aws_api_gateway_method_response" "cors" {
+  rest_api_id = aws_api_gateway_rest_api.root.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.cors.http_method
 
   status_code = "200"
 
@@ -48,13 +56,13 @@ resource "aws_api_gateway_method_response" "default" {
   }
 }
 
-resource "aws_api_gateway_integration_response" "default" {
-  depends_on = [aws_api_gateway_integration.default]
+resource "aws_api_gateway_integration_response" "cors" {
+  depends_on = [aws_api_gateway_integration.cors]
 
-  rest_api_id = aws_api_gateway_rest_api.default.id
-  resource_id = aws_api_gateway_resource.default.id
-  http_method = aws_api_gateway_method.default.http_method
-  status_code = aws_api_gateway_method_response.default.status_code
+  rest_api_id = aws_api_gateway_rest_api.root.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.cors.http_method
+  status_code = aws_api_gateway_method_response.cors.status_code
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'accept,cache-control,content-type,x-api-key'"

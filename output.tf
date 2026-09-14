@@ -13,7 +13,3 @@ output "execution_arn" {
 output "proxy_id" {
   value = aws_api_gateway_resource.proxy.id
 }
-
-output "proxy_method" {
-  value = aws_api_gateway_method.proxy_any.http_method
-}

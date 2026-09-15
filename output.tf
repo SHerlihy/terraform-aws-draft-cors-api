@@ -9,7 +9,3 @@ output "root_resource_id" {
 output "execution_arn" {
   value = aws_api_gateway_rest_api.root.execution_arn
 }
-
-output "proxy_id" {
-  value = aws_api_gateway_resource.proxy.id
-}
